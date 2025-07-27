@@ -83,21 +83,18 @@
     const awakening = document.getElementById("awakening");
     const highlightSound = document.getElementById("highlight");
     const overlay = document.getElementById("startOverlay");
-    const frames = ["1.jpg", "2.jpg"];
-    let index = 0;
-    let delay = 300;
-    let zoom = 1.0;
-    let count = 0;
 
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    let oscillator, gain;
+    const frames = ["1.jpg", "2.jpg"];
+    let index = 0, delay = 300, zoom = 1.0, count = 0;
+
+    let audioCtx, oscillator, gain;
 
     function startSound() {
       oscillator = audioCtx.createOscillator();
       gain = audioCtx.createGain();
       oscillator.type = 'sine';
       oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
-      gain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
       oscillator.connect(gain);
       gain.connect(audioCtx.destination);
       oscillator.start();
@@ -113,7 +110,9 @@
         zoom += 0.02;
 
         // Increase pitch
-        oscillator.frequency.setValueAtTime(200 + count * 5, audioCtx.currentTime);
+        if (oscillator && oscillator.frequency) {
+          oscillator.frequency.setValueAtTime(200 + count * 5, audioCtx.currentTime);
+        }
 
         if (count % 6 === 0 && delay > 10) {
           delay -= 10;
@@ -128,22 +127,23 @@
             photo.src = "explosion.jpg";
             photo.style.transform = "scale(0.8)";
             awakening.style.opacity = 1;
+            highlightSound.currentTime = 0;
             highlightSound.play();
           }, 300);
         }
       }, delay);
     }
 
-    overlay.addEventListener('click', async () => {
+    overlay.addEventListener('click', () => {
       overlay.style.opacity = 0;
       setTimeout(() => overlay.remove(), 1000);
 
-      if (audioCtx.state === 'suspended') {
-        await audioCtx.resume();
-      }
-
-      startSound();
-      startAnimation();
+      // Start/resume AudioContext + animation
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtx.resume().then(() => {
+        startSound();
+        startAnimation();
+      });
     });
   </script>
 </body>
