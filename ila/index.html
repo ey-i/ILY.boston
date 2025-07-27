@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Awakening Sequence</title>
+  <style>
+    body {
+      margin: 0;
+      background: black;
+      overflow: hidden;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    #container {
+      overflow: hidden;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    img {
+      max-width: 90vw;
+      max-height: 90vh;
+      transition: transform 0.3s linear;
+      transform-origin: center center;
+      object-fit: cover;
+      position: absolute;
+    }
+
+    #awakening {
+      position: absolute;
+      top: 60%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-family: Impact, sans-serif;
+      font-size: 8vw;
+      color: white;
+      opacity: 0;
+      transition: opacity 1s ease-in-out;
+      pointer-events: none;
+      text-shadow: 0 0 30px rgba(255, 255, 255, 0.8);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 2rem;
+      border-radius: 10px;
+    }
+
+    #startOverlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: black;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-family: Arial, sans-serif;
+      font-size: 3vw;
+      z-index: 999;
+      transition: opacity 1s ease;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div id="startOverlay">CLICK TO START</div>
+
+  <div id="container">
+    <img id="photo" src="1.jpg" alt="sequence" />
+    <div id="awakening">THE AWAKENING</div>
+  </div>
+
+  <audio id="highlight" src="awakening.mp3" preload="auto"></audio>
+
+  <script>
+    const photo = document.getElementById("photo");
+    const awakening = document.getElementById("awakening");
+    const highlightSound = document.getElementById("highlight");
+    const overlay = document.getElementById("startOverlay");
+    const frames = ["1.jpg", "2.jpg"];
+    let index = 0;
+    let delay = 300;
+    let zoom = 1.0;
+    let count = 0;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let oscillator, gain;
+
+    function startSound() {
+      oscillator = audioCtx.createOscillator();
+      gain = audioCtx.createGain();
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.09, audioCtx.currentTime);
+      oscillator.connect(gain);
+      gain.connect(audioCtx.destination);
+      oscillator.start();
+    }
+
+    function startAnimation() {
+      const interval = setInterval(() => {
+        photo.src = frames[index % 2];
+        photo.style.transform = `scale(${zoom})`;
+
+        index++;
+        count++;
+        zoom += 0.02;
+
+        // Increase pitch
+        oscillator.frequency.setValueAtTime(200 + count * 5, audioCtx.currentTime);
+
+        if (count % 6 === 0 && delay > 10) {
+          delay -= 10;
+          clearInterval(interval);
+          startAnimation();
+        }
+
+        if (count > 220) {
+          clearInterval(interval);
+          oscillator.stop();
+          setTimeout(() => {
+            photo.src = "explosion.jpg";
+            photo.style.transform = "scale(0.8)";
+            awakening.style.opacity = 1;
+            highlightSound.play();
+          }, 300);
+        }
+      }, delay);
+    }
+
+    overlay.addEventListener('click', async () => {
+      overlay.style.opacity = 0;
+      setTimeout(() => overlay.remove(), 1000);
+
+      if (audioCtx.state === 'suspended') {
+        await audioCtx.resume();
+      }
+
+      startSound();
+      startAnimation();
+    });
+  </script>
+</body>
+</html>
